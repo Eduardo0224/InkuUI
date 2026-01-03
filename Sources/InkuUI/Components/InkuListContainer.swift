@@ -10,14 +10,15 @@ import SwiftUI
 /// A reusable container for list views with consistent Inku visual identity
 ///
 /// InkuListContainer provides a standardized wrapper for list content with optional header,
-/// consistent spacing, and Inku design tokens. Use this for all list-based screens to
-/// maintain visual consistency.
+/// consistent spacing, keyboard dismissal behavior, and Inku design tokens. Use this for
+/// all list-based screens to maintain visual consistency.
 ///
 /// Example usage:
 /// ```swift
 /// InkuListContainer(
 ///     title: "Search Results",
-///     subtitle: "Found 42 manga"
+///     subtitle: "Found 42 manga",
+///     scrollDismissesKeyboard: .interactively
 /// ) {
 ///     LazyVStack(spacing: InkuSpacing.spacing16) {
 ///         ForEach(items) { item in
@@ -35,6 +36,7 @@ public struct InkuListContainer<Content: View>: View {
     let showsDivider: Bool
     let contentPadding: CGFloat
     let scrollDisabled: Bool
+    let scrollDismissesKeyboard: ScrollDismissesKeyboardMode
     let content: Content
 
     // MARK: - Initializers
@@ -45,6 +47,7 @@ public struct InkuListContainer<Content: View>: View {
         showsDivider: Bool = true,
         contentPadding: CGFloat = InkuSpacing.spacing16,
         scrollDisabled: Bool = false,
+        scrollDismissesKeyboard: ScrollDismissesKeyboardMode = .automatic,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -52,6 +55,7 @@ public struct InkuListContainer<Content: View>: View {
         self.showsDivider = showsDivider
         self.contentPadding = contentPadding
         self.scrollDisabled = scrollDisabled
+        self.scrollDismissesKeyboard = scrollDismissesKeyboard
         self.content = content()
     }
 
@@ -81,6 +85,7 @@ public struct InkuListContainer<Content: View>: View {
             }
         }
         .scrollDisabled(scrollDisabled)
+        .scrollDismissesKeyboard(scrollDismissesKeyboard)
         .background(Color.inkuSurface)
     }
 
