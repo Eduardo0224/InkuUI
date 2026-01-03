@@ -34,6 +34,7 @@ public struct InkuListContainer<Content: View>: View {
     let subtitle: String?
     let showsDivider: Bool
     let contentPadding: CGFloat
+    let scrollDisabled: Bool
     let content: Content
 
     // MARK: - Initializers
@@ -43,12 +44,14 @@ public struct InkuListContainer<Content: View>: View {
         subtitle: String? = nil,
         showsDivider: Bool = true,
         contentPadding: CGFloat = InkuSpacing.spacing16,
+        scrollDisabled: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.subtitle = subtitle
         self.showsDivider = showsDivider
         self.contentPadding = contentPadding
+        self.scrollDisabled = scrollDisabled
         self.content = content()
     }
 
@@ -77,6 +80,7 @@ public struct InkuListContainer<Content: View>: View {
                     .padding(.bottom, contentPadding)
             }
         }
+        .scrollDisabled(scrollDisabled)
         .background(Color.inkuSurface)
     }
 
