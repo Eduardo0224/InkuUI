@@ -109,7 +109,7 @@ public struct InkuEmptyView: View {
     private var iconView: some View {
         let image = Image(systemName: icon)
             .font(iconSize.font)
-            .foregroundStyle(Color.inkuTextTertiary)
+            .foregroundStyle(Color.inkuAccent)
 
         if let effect = symbolEffect {
             let options = symbolEffectOptions ?? .default
