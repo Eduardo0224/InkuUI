@@ -16,31 +16,63 @@ import SwiftUI
 /// ```swift
 /// InkuEmptyView(title: "No manga found")
 /// InkuEmptyView(icon: "book", title: "Library is empty", subtitle: "Start adding manga")
-/// InkuEmptyView(title: "No results", actionTitle: "Clear filters") { /* action */ }
+/// InkuEmptyView(icon: "magnifyingglass", iconSize: .large, title: "Search for Manga")
 /// ```
 public struct InkuEmptyView: View {
+
+    // MARK: - Types
+
+    public enum IconSize {
+        case small
+        case medium
+        case large
+
+        var font: Font {
+            switch self {
+            case .small: return .inkuIconSmall
+            case .medium: return .inkuIconMedium
+            case .large: return .inkuIconLarge
+            }
+        }
+    }
+
+    public enum SymbolEffect {
+        case pulse
+        case bounce
+        case variableColor
+        case scale
+    }
 
     // MARK: - Properties
 
     let icon: String
+    let iconSize: IconSize
     let title: String
     var subtitle: String?
     var actionTitle: String?
     var action: (() -> Void)?
+    var symbolEffect: SymbolEffect?
+    var symbolEffectOptions: SymbolEffectOptions?
 
     // MARK: - Initializers
 
     public init(
         icon: String = "tray",
+        iconSize: IconSize = .medium,
         title: String,
         subtitle: String? = nil,
         actionTitle: String? = nil,
+        symbolEffect: SymbolEffect? = nil,
+        symbolEffectOptions: SymbolEffectOptions? = nil,
         action: (() -> Void)? = nil
     ) {
         self.icon = icon
+        self.iconSize = iconSize
         self.title = title
         self.subtitle = subtitle
         self.actionTitle = actionTitle
+        self.symbolEffect = symbolEffect
+        self.symbolEffectOptions = symbolEffectOptions
         self.action = action
     }
 
@@ -48,9 +80,7 @@ public struct InkuEmptyView: View {
 
     public var body: some View {
         VStack(spacing: InkuSpacing.spacing16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundStyle(Color.inkuTextTertiary)
+            iconView
 
             VStack(spacing: InkuSpacing.spacing8) {
                 Text(title)
@@ -71,6 +101,31 @@ public struct InkuEmptyView: View {
         }
         .padding(InkuSpacing.spacing24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Private Views
+
+    @ViewBuilder
+    private var iconView: some View {
+        let image = Image(systemName: icon)
+            .font(iconSize.font)
+            .foregroundStyle(Color.inkuTextTertiary)
+
+        if let effect = symbolEffect {
+            let options = symbolEffectOptions ?? .default
+            switch effect {
+            case .pulse:
+                image.symbolEffect(.pulse, options: options)
+            case .bounce:
+                image.symbolEffect(.bounce, options: options)
+            case .variableColor:
+                image.symbolEffect(.variableColor, options: options)
+            case .scale:
+                image.symbolEffect(.scale, options: options)
+            }
+        } else {
+            image
+        }
     }
 }
 
