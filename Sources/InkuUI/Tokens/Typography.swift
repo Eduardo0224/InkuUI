@@ -40,4 +40,15 @@ public extension Font {
 
     /// Smallest text, badges
     static let inkuCaptionSmall: Font = .caption2
+
+    // MARK: - Icon Sizes
+
+    /// Large icon for empty states, hero sections (scales with largeTitle)
+    static let inkuIconLarge: Font = .largeTitle
+
+    /// Medium icon for empty states (scales with title)
+    static let inkuIconMedium: Font = .title
+
+    /// Small icon for inline elements (scales with title2)
+    static let inkuIconSmall: Font = .title2
 }
