@@ -76,6 +76,7 @@ public struct InkuMangaCard: View {
         }
         .background(Color.inkuSurfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: InkuRadius.radius12))
+        .shadow(color: .black.opacity(0.08), radius: InkuRadius.radius4, y: 2)
         .overlay(alignment: .topTrailing) {
             if let badge {
                 InkuBadge(text: badge, isLoading: isLoading)
