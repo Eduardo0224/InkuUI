@@ -9,15 +9,15 @@ import SwiftUI
 
 /// An async image component specialized for manga/comic cover artwork display
 ///
-/// InkuCoverImage handles image loading states with automatic skeleton shimmer
-/// during fetch, error fallback with photo icon, and customizable corner radius.
+/// Handles image loading states with automatic skeleton shimmer during fetch,
+/// error fallback with photo icon, and customizable corner radius.
 /// Uses ImageCacheService for efficient memory and disk caching.
 ///
 /// Example usage:
 /// ```swift
 /// InkuCoverImage(url: coverURL)
 /// InkuCoverImage(url: coverURL, cornerRadius: 8)
-/// InkuCoverImage(url: nil, isLoading: true)  // Skeleton state
+/// InkuCoverImage(url: nil, isLoading: true)
 /// ```
 public struct InkuCoverImage: View {
 
@@ -68,7 +68,6 @@ public struct InkuCoverImage: View {
             await loadImage()
         }
         .onChange(of: url) { _, _ in
-            // Clear state when URL changes
             image = nil
             loadError = nil
         }
@@ -77,7 +76,6 @@ public struct InkuCoverImage: View {
     // MARK: - Private Properties
 
     private var shouldShowShimmer: Bool {
-        // Show shimmer if forced by isLoading, OR if there's a URL being loaded
         isLoading || url != nil
     }
 
@@ -99,16 +97,12 @@ public struct InkuCoverImage: View {
         loadError = nil
 
         do {
-            // Check if image exists in disk cache first
             let fileURL = ImageCacheService.shared.getFileURL(for: url)
             if FileManager.default.fileExists(atPath: fileURL.path()) {
                 let data = try Data(contentsOf: fileURL)
                 if let cachedImage = UIImage(data: data) {
-                    // Validate cached image has valid dimensions
                     guard cachedImage.size.width > 0, cachedImage.size.height > 0 else {
-                        print("[InkuCoverImage] ❌ Invalid cached image dimensions (\(cachedImage.size)), removing: \(fileURL.lastPathComponent)")
                         try? FileManager.default.removeItem(at: fileURL)
-                        // Continue to download fresh image
                         let downloadedImage = try await ImageCacheService.shared.image(for: url)
                         image = downloadedImage
                         return
@@ -118,29 +112,10 @@ public struct InkuCoverImage: View {
                 }
             }
 
-            // Download and cache the image
             let downloadedImage = try await ImageCacheService.shared.image(for: url)
             image = downloadedImage
         } catch {
             loadError = error
-
-            // Provide detailed error logging based on error type
-            if let urlError = error as? URLError {
-                switch urlError.code {
-                case .badServerResponse:
-                    print("[InkuCoverImage] ❌ Bad server response (404/500) for: \(url.lastPathComponent)")
-                case .cannotDecodeContentData:
-                    print("[InkuCoverImage] ❌ Invalid image data for: \(url.lastPathComponent)")
-                case .notConnectedToInternet:
-                    print("[InkuCoverImage] ❌ No internet connection for: \(url.lastPathComponent)")
-                case .timedOut:
-                    print("[InkuCoverImage] ❌ Request timed out for: \(url.lastPathComponent)")
-                default:
-                    print("[InkuCoverImage] ❌ Network error (\(urlError.code.rawValue)) for: \(url.lastPathComponent)")
-                }
-            } else {
-                print("[InkuCoverImage] ❌ Unexpected error loading image: \(error)")
-            }
         }
     }
 }
