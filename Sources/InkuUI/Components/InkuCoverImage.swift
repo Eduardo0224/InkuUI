@@ -31,7 +31,6 @@ public struct InkuCoverImage: View {
 
     @State private var image: UIImage?
     @State private var loadError: Error?
-    @State private var hasAttemptedLoad = false
 
     // MARK: - Initializers
 
@@ -69,8 +68,7 @@ public struct InkuCoverImage: View {
             await loadImage()
         }
         .onChange(of: url) { _, _ in
-            // Reset load attempt only when URL actually changes
-            hasAttemptedLoad = false
+            // Clear state when URL changes
             image = nil
             loadError = nil
         }
@@ -98,12 +96,6 @@ public struct InkuCoverImage: View {
             return
         }
 
-        // Prevent infinite retry loops - only attempt once per URL
-        guard !hasAttemptedLoad else {
-            return
-        }
-
-        hasAttemptedLoad = true
         loadError = nil
 
         do {
