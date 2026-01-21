@@ -31,6 +31,7 @@ public struct InkuCoverImage: View {
 
     @State private var image: UIImage?
     @State private var loadError: Error?
+    @State private var hasAttemptedLoad = false
 
     // MARK: - Initializers
 
@@ -65,6 +66,8 @@ public struct InkuCoverImage: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: url) {
+            // Reset load attempt when URL changes
+            hasAttemptedLoad = false
             await loadImage()
         }
     }
@@ -91,6 +94,12 @@ public struct InkuCoverImage: View {
             return
         }
 
+        // Prevent infinite retry loops - only attempt once per URL
+        guard !hasAttemptedLoad else {
+            return
+        }
+
+        hasAttemptedLoad = true
         loadError = nil
 
         do {
@@ -101,7 +110,7 @@ public struct InkuCoverImage: View {
                 if let cachedImage = UIImage(data: data) {
                     // Validate cached image has valid dimensions
                     guard cachedImage.size.width > 0, cachedImage.size.height > 0 else {
-                        print("[InkuCoverImage] Invalid cached image dimensions (\(cachedImage.size)), removing: \(fileURL.lastPathComponent)")
+                        print("[InkuCoverImage] ❌ Invalid cached image dimensions (\(cachedImage.size)), removing: \(fileURL.lastPathComponent)")
                         try? FileManager.default.removeItem(at: fileURL)
                         // Continue to download fresh image
                         let downloadedImage = try await ImageCacheService.shared.image(for: url)
@@ -118,7 +127,24 @@ public struct InkuCoverImage: View {
             image = downloadedImage
         } catch {
             loadError = error
-            print("[InkuCoverImage] Error loading image: \(error)")
+
+            // Provide detailed error logging based on error type
+            if let urlError = error as? URLError {
+                switch urlError.code {
+                case .badServerResponse:
+                    print("[InkuCoverImage] ❌ Bad server response (404/500) for: \(url.lastPathComponent)")
+                case .cannotDecodeContentData:
+                    print("[InkuCoverImage] ❌ Invalid image data for: \(url.lastPathComponent)")
+                case .notConnectedToInternet:
+                    print("[InkuCoverImage] ❌ No internet connection for: \(url.lastPathComponent)")
+                case .timedOut:
+                    print("[InkuCoverImage] ❌ Request timed out for: \(url.lastPathComponent)")
+                default:
+                    print("[InkuCoverImage] ❌ Network error (\(urlError.code.rawValue)) for: \(url.lastPathComponent)")
+                }
+            } else {
+                print("[InkuCoverImage] ❌ Unexpected error loading image: \(error)")
+            }
         }
     }
 }
