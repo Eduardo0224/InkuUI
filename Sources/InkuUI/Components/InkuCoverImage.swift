@@ -11,6 +11,7 @@ import SwiftUI
 ///
 /// InkuCoverImage handles image loading states with automatic skeleton shimmer
 /// during fetch, error fallback with photo icon, and customizable corner radius.
+/// Uses ImageCacheService for efficient memory and disk caching.
 ///
 /// Example usage:
 /// ```swift
@@ -25,6 +26,11 @@ public struct InkuCoverImage: View {
     let url: URL?
     var cornerRadius: CGFloat
     let isLoading: Bool
+
+    // MARK: - States
+
+    @State private var image: UIImage?
+    @State private var loadError: Error?
 
     // MARK: - Initializers
 
@@ -41,26 +47,26 @@ public struct InkuCoverImage: View {
     // MARK: - Body
 
     public var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .empty:
-                placeholder
-                    .inkuSkeleton(shouldShowShimmer)
-            case .success(let image):
-                image
+        Group {
+            if let image {
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-            case .failure:
+            } else if loadError != nil {
                 placeholder
                     .overlay {
                         Image(systemName: "photo")
                             .foregroundStyle(Color.inkuTextTertiary)
                     }
-            @unknown default:
+            } else {
                 placeholder
+                    .inkuSkeleton(shouldShowShimmer)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .task(id: url) {
+            await loadImage()
+        }
     }
 
     // MARK: - Private Properties
@@ -75,6 +81,36 @@ public struct InkuCoverImage: View {
     private var placeholder: some View {
         Rectangle()
             .fill(Color.inkuSurfaceSecondary)
+    }
+
+    // MARK: - Private Functions
+
+    private func loadImage() async {
+        guard let url else {
+            image = nil
+            return
+        }
+
+        loadError = nil
+
+        do {
+            // Check if image exists in disk cache first
+            let fileURL = ImageCacheService.shared.getFileURL(for: url)
+            if FileManager.default.fileExists(atPath: fileURL.path()) {
+                let data = try Data(contentsOf: fileURL)
+                if let cachedImage = UIImage(data: data) {
+                    image = cachedImage
+                    return
+                }
+            }
+
+            // Download and cache the image
+            let downloadedImage = try await ImageCacheService.shared.image(for: url)
+            image = downloadedImage
+        } catch {
+            loadError = error
+            print("[InkuCoverImage] Error loading image: \(error)")
+        }
     }
 }
 
