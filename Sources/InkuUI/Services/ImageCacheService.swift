@@ -61,13 +61,23 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
             // Wait for download to complete
             let image = try await task.value
 
-            // Update cache with downloaded image
-            cache[url] = .downloaded(image: image)
+            // Resize image before caching to optimize memory usage
+            let imageToCache: UIImage
+            if let resized = await image.resize(width: maxImageWidth) {
+                imageToCache = resized
+                print("[ImageCacheService] ✅ Resized image: \(url.lastPathComponent) - original: \(image.size) → resized: \(resized.size)")
+            } else {
+                imageToCache = image
+                print("[ImageCacheService] ⚠️ Failed to resize, using original: \(url.lastPathComponent) - size: \(image.size)")
+            }
 
-            // Save to disk asynchronously
-            try await saveImageToDisk(url: url, image: image)
+            // Update cache with resized image
+            cache[url] = .downloaded(image: imageToCache)
 
-            return image
+            // Save to disk asynchronously (already resized)
+            try await saveImageToDisk(url: url, image: imageToCache)
+
+            return imageToCache
         } catch {
             // Remove from cache on error
             cache.removeValue(forKey: url)
@@ -125,23 +135,17 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         return image
     }
 
-    /// Saves the image to disk with resizing for optimization
+    /// Saves the image to disk (image should already be resized)
     private func saveImageToDisk(url: URL, image: UIImage) async throws {
-        // Validate source image dimensions
+        // Validate image dimensions
         guard image.size.width > 0, image.size.height > 0 else {
-            print("[ImageCacheService] Cannot save image with invalid dimensions: \(image.size) for URL: \(url.lastPathComponent)")
-            return
-        }
-
-        // Resize image to optimize storage
-        guard let resizedImage = await image.resize(width: maxImageWidth) else {
-            print("[ImageCacheService] Failed to resize image for URL: \(url.lastPathComponent)")
+            print("[ImageCacheService] ❌ Cannot save image with invalid dimensions: \(image.size) for URL: \(url.lastPathComponent)")
             return
         }
 
         // Convert to PNG data
-        guard let data = resizedImage.pngData() else {
-            print("[ImageCacheService] Failed to convert resized image to PNG: \(url.lastPathComponent)")
+        guard let data = image.pngData() else {
+            print("[ImageCacheService] ❌ Failed to convert image to PNG: \(url.lastPathComponent)")
             return
         }
 
@@ -149,7 +153,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         let fileURL = getFileURL(for: url)
         try data.write(to: fileURL, options: .atomic)
 
-        print("[ImageCacheService] ✅ Saved image to disk: \(fileURL.lastPathComponent) - original: \(image.size) → resized: \(resizedImage.size)")
+        print("[ImageCacheService] 💾 Saved to disk: \(fileURL.lastPathComponent) - size: \(image.size)")
 
         // Remove from memory cache after saving to disk to free memory
         cache.removeValue(forKey: url)
