@@ -25,6 +25,9 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     /// In-memory cache of images by URL
     private var cache: [URL: ImageStatus] = [:]
 
+    /// Set of URLs that have failed to load (persistent across view lifecycles)
+    private var failedURLs: Set<URL> = []
+
     /// Maximum width for image resizing (optimizes memory usage)
     private let maxImageWidth: CGFloat = 300
 
@@ -37,6 +40,11 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     /// Fetches an image from cache or downloads it if not cached
     /// Implements task deduplication to prevent multiple simultaneous downloads of the same image
     public func image(for url: URL) async throws -> UIImage {
+        // Check if this URL has previously failed - don't retry
+        if failedURLs.contains(url) {
+            throw URLError(.badServerResponse)
+        }
+
         // Check if image is already cached or being downloaded
         if let status = cache[url] {
             return switch status {
@@ -81,6 +89,10 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         } catch {
             // Remove from cache on error
             cache.removeValue(forKey: url)
+
+            // Mark this URL as failed to prevent future retry attempts
+            failedURLs.insert(url)
+
             throw error
         }
     }
