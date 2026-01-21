@@ -66,9 +66,13 @@ public struct InkuCoverImage: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: url) {
-            // Reset load attempt when URL changes
-            hasAttemptedLoad = false
             await loadImage()
+        }
+        .onChange(of: url) { _, _ in
+            // Reset load attempt only when URL actually changes
+            hasAttemptedLoad = false
+            image = nil
+            loadError = nil
         }
     }
 
