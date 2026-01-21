@@ -22,7 +22,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
 
     private var cache: [URL: ImageStatus] = [:]
     private var failedURLs: Set<URL> = []
-    private let maxImageWidth: CGFloat = 300
+    private let maxImageWidth: CGFloat = 150
 
     // MARK: - Initializers
 
