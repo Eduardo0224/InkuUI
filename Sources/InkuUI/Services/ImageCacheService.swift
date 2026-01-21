@@ -8,7 +8,6 @@
 import UIKit
 
 /// Actor-based image caching service with memory and disk persistence
-/// Prevents data races and provides thread-safe image caching
 public actor ImageCacheService: ImageCacheServiceProtocol {
 
     // MARK: - Properties
@@ -16,19 +15,13 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     /// Shared singleton instance
     public static let shared = ImageCacheService()
 
-    /// Image status for tracking downloads and cached images
     private enum ImageStatus {
         case downloading(task: Task<UIImage, any Error>)
         case downloaded(image: UIImage)
     }
 
-    /// In-memory cache of images by URL
     private var cache: [URL: ImageStatus] = [:]
-
-    /// Set of URLs that have failed to load (persistent across view lifecycles)
     private var failedURLs: Set<URL> = []
-
-    /// Maximum width for image resizing (optimizes memory usage)
     private let maxImageWidth: CGFloat = 300
 
     // MARK: - Initializers
@@ -38,76 +31,62 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     // MARK: - Public Functions
 
     /// Fetches an image from cache or downloads it if not cached
-    /// Implements task deduplication to prevent multiple simultaneous downloads of the same image
+    /// - Parameter url: The URL of the image to fetch
+    /// - Returns: The cached or downloaded image
+    /// - Throws: Error if download fails or image data is invalid
     public func image(for url: URL) async throws -> UIImage {
-        // Check if this URL has previously failed - don't retry
         if failedURLs.contains(url) {
             throw URLError(.badServerResponse)
         }
 
-        // Check if image is already cached or being downloaded
         if let status = cache[url] {
             return switch status {
             case .downloading(let task):
-                // Wait for existing download to complete
                 try await task.value
             case .downloaded(let image):
-                // Return cached image
                 image
             }
         }
 
-        // Start new download task
         let task = Task {
             try await downloadImage(url: url)
         }
 
-        // Store task in cache to prevent duplicate downloads
         cache[url] = .downloading(task: task)
 
         do {
-            // Wait for download to complete
             let image = try await task.value
 
-            // Resize image before caching to optimize memory usage
             let imageToCache: UIImage
             if let resized = await image.resize(width: maxImageWidth) {
                 imageToCache = resized
-                print("[ImageCacheService] ✅ Resized image: \(url.lastPathComponent) - original: \(image.size) → resized: \(resized.size)")
             } else {
                 imageToCache = image
-                print("[ImageCacheService] ⚠️ Failed to resize, using original: \(url.lastPathComponent) - size: \(image.size)")
             }
 
-            // Update cache with resized image
             cache[url] = .downloaded(image: imageToCache)
 
-            // Save to disk asynchronously (already resized)
             try await saveImageToDisk(url: url, image: imageToCache)
 
             return imageToCache
         } catch {
-            // Remove from cache on error
             cache.removeValue(forKey: url)
-
-            // Mark this URL as failed to prevent future retry attempts
             failedURLs.insert(url)
-
             throw error
         }
     }
 
     /// Gets the file URL for a cached image in the caches directory
+    /// - Parameter url: The source URL of the image
+    /// - Returns: The local file URL where the image is cached
     nonisolated public func getFileURL(for url: URL) -> URL {
         URL.cachesDirectory.appending(path: url.lastPathComponent)
     }
 
     /// Clears all cached images from memory and disk
     public func clearCache() async {
-        // Clear memory cache
         cache.removeAll()
 
-        // Clear disk cache
         let fileManager = FileManager.default
         guard let cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
             return
@@ -123,23 +102,20 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
                 try fileManager.removeItem(at: fileURL)
             }
         } catch {
-            print("[ImageCacheService] Error clearing disk cache: \(error)")
+            // Silently fail - cache clearing is not critical
         }
     }
 
     // MARK: - Private Functions
 
-    /// Downloads an image from the given URL
     private func downloadImage(url: URL) async throws -> UIImage {
         let (data, response) = try await URLSession.shared.data(from: url)
 
-        // Validate response
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw URLError(.badServerResponse)
         }
 
-        // Convert data to UIImage
         guard let image = UIImage(data: data) else {
             throw URLError(.cannotDecodeContentData)
         }
@@ -147,27 +123,18 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         return image
     }
 
-    /// Saves the image to disk (image should already be resized)
     private func saveImageToDisk(url: URL, image: UIImage) async throws {
-        // Validate image dimensions
         guard image.size.width > 0, image.size.height > 0 else {
-            print("[ImageCacheService] ❌ Cannot save image with invalid dimensions: \(image.size) for URL: \(url.lastPathComponent)")
             return
         }
 
-        // Convert to PNG data
         guard let data = image.pngData() else {
-            print("[ImageCacheService] ❌ Failed to convert image to PNG: \(url.lastPathComponent)")
             return
         }
 
-        // Write to disk
         let fileURL = getFileURL(for: url)
         try data.write(to: fileURL, options: .atomic)
 
-        print("[ImageCacheService] 💾 Saved to disk: \(fileURL.lastPathComponent) - size: \(image.size)")
-
-        // Remove from memory cache after saving to disk to free memory
         cache.removeValue(forKey: url)
     }
 }
@@ -180,19 +147,16 @@ extension UIImage {
     /// - Parameter width: The target width
     /// - Returns: The resized image, or nil if resizing fails
     func resize(width: CGFloat) async -> UIImage? {
-        // Don't resize if image is already smaller or if dimensions are invalid
         guard size.width > 0, size.height > 0, width > 0 else {
             return nil
         }
 
-        // Calculate scale to maintain aspect ratio
         let scale = min(1, width / size.width)
         let targetSize = CGSize(
             width: size.width * scale,
             height: size.height * scale
         )
 
-        // Ensure target dimensions are valid
         guard targetSize.width > 0, targetSize.height > 0 else {
             return nil
         }
