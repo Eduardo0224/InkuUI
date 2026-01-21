@@ -99,6 +99,15 @@ public struct InkuCoverImage: View {
             if FileManager.default.fileExists(atPath: fileURL.path()) {
                 let data = try Data(contentsOf: fileURL)
                 if let cachedImage = UIImage(data: data) {
+                    // Validate cached image has valid dimensions
+                    guard cachedImage.size.width > 0, cachedImage.size.height > 0 else {
+                        print("[InkuCoverImage] Invalid cached image dimensions (\(cachedImage.size)), removing: \(fileURL.lastPathComponent)")
+                        try? FileManager.default.removeItem(at: fileURL)
+                        // Continue to download fresh image
+                        let downloadedImage = try await ImageCacheService.shared.image(for: url)
+                        image = downloadedImage
+                        return
+                    }
                     image = cachedImage
                     return
                 }
