@@ -150,11 +150,23 @@ extension UIImage {
     /// - Parameter width: The target width
     /// - Returns: The resized image, or nil if resizing fails
     func resize(width: CGFloat) async -> UIImage? {
+        // Don't resize if image is already smaller or if dimensions are invalid
+        guard size.width > 0, size.height > 0, width > 0 else {
+            return nil
+        }
+
+        // Calculate scale to maintain aspect ratio
         let scale = min(1, width / size.width)
         let targetSize = CGSize(
-            width: width,
+            width: size.width * scale,
             height: size.height * scale
         )
+
+        // Ensure target dimensions are valid
+        guard targetSize.width > 0, targetSize.height > 0 else {
+            return nil
+        }
+
         return await byPreparingThumbnail(ofSize: targetSize)
     }
 }
