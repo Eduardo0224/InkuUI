@@ -27,17 +27,51 @@ public struct InkuBadge: View {
         case outlined
     }
 
+    public enum Size {
+        case standard
+        case large
+
+        var font: Font {
+            switch self {
+            case .standard:
+                return .inkuCaptionSmall
+            case .large:
+                return .inkuBody
+            }
+        }
+
+        var horizontalPadding: CGFloat {
+            switch self {
+            case .standard:
+                return InkuSpacing.spacing8
+            case .large:
+                return InkuSpacing.spacing12
+            }
+        }
+
+        var verticalPadding: CGFloat {
+            switch self {
+            case .standard:
+                return InkuSpacing.spacing4
+            case .large:
+                return InkuSpacing.spacing12
+            }
+        }
+    }
+
     // MARK: - Properties
 
     let text: String
     var style: Style
+    var size: Size
     let isLoading: Bool
 
     // MARK: - Initializers
 
-    public init(text: String, style: Style = .accent, isLoading: Bool = false) {
+    public init(text: String, style: Style = .accent, size: Size = .standard, isLoading: Bool = false) {
         self.text = text
         self.style = style
+        self.size = size
         self.isLoading = isLoading
     }
 
@@ -45,11 +79,11 @@ public struct InkuBadge: View {
 
     public var body: some View {
         Text(text)
-            .font(.inkuCaptionSmall)
+            .font(size.font)
             .fontWeight(.medium)
             .inkuSkeleton(isLoading)
-            .padding(.horizontal, InkuSpacing.spacing8)
-            .padding(.vertical, InkuSpacing.spacing4)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
             .foregroundStyle(foregroundColor)
             .background(backgroundColor)
             .clipShape(Capsule())
@@ -94,11 +128,31 @@ public struct InkuBadge: View {
 
 #Preview("Badge Styles", traits: .sizeThatFitsLayout) {
     VStack(spacing: InkuSpacing.spacing16) {
+        Text("Standard Size")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
         HStack(spacing: InkuSpacing.spacing12) {
             InkuBadge(text: "Shounen", style: .accent)
             InkuBadge(text: "Ongoing", style: .secondary)
             InkuBadge(text: "New", style: .outlined)
         }
+
+        Text("Large Size (44pt touch target)")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.top)
+
+        HStack(spacing: InkuSpacing.spacing12) {
+            InkuBadge(text: "Action", style: .accent, size: .large)
+            InkuBadge(text: "Adventure", style: .secondary, size: .large)
+            InkuBadge(text: "Comedy", style: .outlined, size: .large)
+        }
+
+        Text("Loading States")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.top)
 
         HStack(spacing: InkuSpacing.spacing12) {
             InkuBadge(text: "Loading", style: .accent, isLoading: true)
