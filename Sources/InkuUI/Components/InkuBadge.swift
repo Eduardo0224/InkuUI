@@ -29,12 +29,15 @@ public struct InkuBadge: View {
 
     public enum Size {
         case standard
+        case medium
         case large
 
         var font: Font {
             switch self {
             case .standard:
                 return .inkuCaptionSmall
+            case .medium:
+                return .inkuCaption
             case .large:
                 return .inkuBody
             }
@@ -44,6 +47,8 @@ public struct InkuBadge: View {
             switch self {
             case .standard:
                 return InkuSpacing.spacing8
+            case .medium:
+                return InkuSpacing.spacing10
             case .large:
                 return InkuSpacing.spacing12
             }
@@ -53,6 +58,8 @@ public struct InkuBadge: View {
             switch self {
             case .standard:
                 return InkuSpacing.spacing4
+            case .medium:
+                return InkuSpacing.spacing8
             case .large:
                 return InkuSpacing.spacing12
             }
@@ -136,6 +143,17 @@ public struct InkuBadge: View {
             InkuBadge(text: "Shounen", style: .accent)
             InkuBadge(text: "Ongoing", style: .secondary)
             InkuBadge(text: "New", style: .outlined)
+        }
+
+        Text("Medium Size")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.top)
+
+        HStack(spacing: InkuSpacing.spacing12) {
+            InkuBadge(text: "Drama", style: .accent, size: .medium)
+            InkuBadge(text: "Romance", style: .secondary, size: .medium)
+            InkuBadge(text: "Thriller", style: .outlined, size: .medium)
         }
 
         Text("Large Size (44pt touch target)")

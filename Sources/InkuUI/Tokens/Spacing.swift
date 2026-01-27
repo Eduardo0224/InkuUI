@@ -19,6 +19,9 @@ public enum InkuSpacing {
     /// 8pt - Related elements
     public static let spacing8: CGFloat = 8
 
+    /// 10pt - Medium spacing
+    public static let spacing10: CGFloat = 10
+
     /// 12pt - Grouped content
     public static let spacing12: CGFloat = 12
 
