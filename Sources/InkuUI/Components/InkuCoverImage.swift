@@ -51,7 +51,7 @@ public struct InkuCoverImage: View {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: .fit)
             } else if loadError != nil {
                 placeholder
                     .overlay {
