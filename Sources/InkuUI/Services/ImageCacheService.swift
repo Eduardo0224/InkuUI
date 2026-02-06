@@ -5,13 +5,7 @@
 //  Created by Eduardo Andrade on 21/01/26.
 //
 
-#if canImport(UIKit)
-import UIKit
-typealias PlatformImage = UIImage
-#elseif canImport(AppKit)
-import AppKit
-typealias PlatformImage = NSImage
-#endif
+import Foundation
 
 /// Actor-based image caching service with memory and disk persistence
 public actor ImageCacheService: ImageCacheServiceProtocol {
@@ -46,11 +40,11 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         }
 
         if let status = cache[url] {
-            return switch status {
+            switch status {
             case .downloading(let task):
-                try await task.value
+                return try await task.value
             case .downloaded(let image):
-                image
+                return image
             }
         }
 

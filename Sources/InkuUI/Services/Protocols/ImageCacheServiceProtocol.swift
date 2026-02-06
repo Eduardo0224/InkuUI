@@ -5,13 +5,7 @@
 //  Created by Eduardo Andrade on 21/01/26.
 //
 
-#if canImport(UIKit)
-import UIKit
-typealias PlatformImage = UIImage
-#elseif canImport(AppKit)
-import AppKit
-typealias PlatformImage = NSImage
-#endif
+import Foundation
 
 /// Protocol for image caching service with memory and disk persistence
 public protocol ImageCacheServiceProtocol: Sendable {
