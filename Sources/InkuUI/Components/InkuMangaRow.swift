@@ -95,7 +95,7 @@ public struct InkuMangaRow: View {
         HStack(alignment: .top, spacing: InkuSpacing.spacing12) {
             // Cover thumbnail
             InkuCoverImage(url: imageURL, cornerRadius: InkuRadius.radius8, isLoading: isLoading)
-                .frame(width: 80, height: 120)
+                .frame(width: InkuDimensions.coverThumbnailWidth, height: InkuDimensions.coverThumbnailHeight)
 
             // Content
             VStack(alignment: .leading, spacing: InkuSpacing.spacing8) {
@@ -169,7 +169,7 @@ public struct InkuMangaRow: View {
         HStack(spacing: InkuSpacing.spacing4) {
             Circle()
                 .fill(status.color)
-                .frame(width: 6, height: 6)
+                .frame(width: InkuDimensions.separatorWidth, height: InkuDimensions.separatorWidth)
             Text(status.displayText)
                 .font(.inkuCaptionSmall)
                 .foregroundStyle(Color.inkuTextSecondary)

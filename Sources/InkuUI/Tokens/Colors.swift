@@ -116,9 +116,9 @@ private extension UIColor {
         self.init { traitCollection in
             switch traitCollection.userInterfaceStyle {
             case .dark:
-                return dark
+                dark
             default:
-                return light
+                light
             }
         }
     }
@@ -130,9 +130,9 @@ private extension NSColor {
         self.init(name: nil) { appearance in
             switch appearance.name {
             case .darkAqua, .vibrantDark, .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark:
-                return dark
+                dark
             default:
-                return light
+                light
             }
         }
     }

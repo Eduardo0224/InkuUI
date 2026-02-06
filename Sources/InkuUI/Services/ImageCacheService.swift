@@ -184,10 +184,12 @@ extension PlatformImage {
         #elseif canImport(AppKit)
         let newImage = NSImage(size: targetSize)
         newImage.lockFocus()
-        draw(in: NSRect(origin: .zero, size: targetSize),
-             from: NSRect(origin: .zero, size: size),
-             operation: .sourceOver,
-             fraction: 1.0)
+        draw(
+            in: NSRect(origin: .zero, size: targetSize),
+            from: NSRect(origin: .zero, size: size),
+            operation: .sourceOver,
+            fraction: 1.0
+        )
         newImage.unlockFocus()
         return newImage
         #endif

@@ -158,4 +158,9 @@ public struct InkuSearchResultCard: View {
         .padding()
     }
     .background(Color.inkuSurface)
+    #if os(macOS)
+    .frame(width: 320, height: 580)
+    #elseif os(tvOS)
+    .frame(width: 1_000)
+    #endif
 }

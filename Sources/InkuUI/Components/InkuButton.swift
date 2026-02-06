@@ -69,6 +69,9 @@ public struct InkuButton: View {
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: InkuRadius.radius8))
         }
+        #if !os(iOS)
+        .buttonStyle(.plain)
+        #endif
     }
 
     // MARK: - Private Properties

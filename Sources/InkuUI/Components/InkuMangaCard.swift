@@ -156,7 +156,7 @@ public struct InkuMangaCard: View {
         HStack(spacing: InkuSpacing.spacing4) {
             Circle()
                 .fill(status.color)
-                .frame(width: 6, height: 6)
+                .frame(width: InkuDimensions.separatorWidth, height: InkuDimensions.separatorWidth)
             Text(status.displayText)
                 .font(.inkuCaptionSmall)
                 .foregroundStyle(Color.inkuTextSecondary)
@@ -208,9 +208,18 @@ public struct InkuMangaCard: View {
 }
 
 #Preview("Manga Card Grid") {
+
+    let minimumGridSize: CGFloat = {
+        #if os(tvOS)
+        200
+        #else
+        140
+        #endif
+    }()
+
     ScrollView {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 140), spacing: InkuSpacing.spacing16)],
+            columns: [GridItem(.adaptive(minimum: minimumGridSize), spacing: InkuSpacing.spacing16)],
             spacing: InkuSpacing.spacing16
         ) {
             ForEach(0..<6) { index in
@@ -228,4 +237,9 @@ public struct InkuMangaCard: View {
         .padding()
         .background(Color.inkuSurface)
     }
+    #if os(macOS)
+    .frame(width: 560)
+    #elseif os(tvOS)
+    .frame(width: 800)
+    #endif
 }

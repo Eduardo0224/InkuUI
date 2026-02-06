@@ -78,12 +78,6 @@ public struct InkuAuthorResultCard: View {
             }
 
             Spacer()
-
-            // Arrow indicator
-            Image(systemName: "chevron.right")
-                .font(.inkuCaption)
-                .foregroundStyle(Color.inkuTextTertiary)
-                .inkuSkeleton(isLoading)
         }
         .padding(InkuSpacing.spacing12)
         .background(Color.inkuSurfaceElevated)
@@ -97,7 +91,7 @@ public struct InkuAuthorResultCard: View {
         ZStack {
             Circle()
                 .fill(Color.inkuAccentSoft)
-                .frame(width: 48, height: 48)
+                .frame(width: InkuDimensions.iconMedium, height: InkuDimensions.iconMedium)
 
             Text(initials)
                 .font(.inkuHeadline)
