@@ -24,7 +24,7 @@ public struct InkuGlassModifier: ViewModifier {
     // MARK: - Body
 
     public func body(content: Content) -> some View {
-        if #available(iOS 26, *), isEnabled {
+        if #available(iOS 26, macOS 16, tvOS 26, *), isEnabled {
             content
                 .background(.ultraThinMaterial)
                 .glassEffect(.regular)
@@ -39,11 +39,12 @@ public struct InkuGlassModifier: ViewModifier {
 
 public extension View {
 
-    /// Apply Liquid Glass effect (iOS 26+)
+    /// Apply Liquid Glass effect (iOS 26+, macOS 16+, tvOS 26+)
     /// - Parameters:
     ///   - isEnabled: Only enable when over dynamic content
     ///   - cornerRadius: Corner radius for the glass container
     /// - Note: Use sparingly - only for floating buttons, overlays, toolbars
+    /// - Note: Falls back to ultraThinMaterial on older OS versions
     func inkuGlass(isEnabled: Bool = true, cornerRadius: CGFloat = InkuRadius.radius16) -> some View {
         modifier(InkuGlassModifier(isEnabled: isEnabled, cornerRadius: cornerRadius))
     }

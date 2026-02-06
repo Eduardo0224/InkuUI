@@ -216,6 +216,9 @@ public struct InkuStatCard: View {
     }
     .padding()
     .background(Color.inkuSurface)
+     #if os(macOS)
+    .frame(width: 320)
+     #endif
 }
 
 #Preview("Stat Card - Mixed Sizes", traits: .sizeThatFitsLayout) {

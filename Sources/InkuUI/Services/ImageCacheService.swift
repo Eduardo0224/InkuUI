@@ -5,7 +5,13 @@
 //  Created by Eduardo Andrade on 21/01/26.
 //
 
+import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Actor-based image caching service with memory and disk persistence
 public actor ImageCacheService: ImageCacheServiceProtocol {
@@ -16,8 +22,8 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     public static let shared = ImageCacheService()
 
     private enum ImageStatus {
-        case downloading(task: Task<UIImage, any Error>)
-        case downloaded(image: UIImage)
+        case downloading(task: Task<PlatformImage, any Error>)
+        case downloaded(image: PlatformImage)
     }
 
     private var cache: [URL: ImageStatus] = [:]
@@ -34,17 +40,17 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     /// - Parameter url: The URL of the image to fetch
     /// - Returns: The cached or downloaded image
     /// - Throws: Error if download fails or image data is invalid
-    public func image(for url: URL) async throws -> UIImage {
+    public func image(for url: URL) async throws -> PlatformImage {
         if failedURLs.contains(url) {
             throw URLError(.badServerResponse)
         }
 
         if let status = cache[url] {
-            return switch status {
+            switch status {
             case .downloading(let task):
-                try await task.value
+                return try await task.value
             case .downloaded(let image):
-                image
+                return image
             }
         }
 
@@ -57,7 +63,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         do {
             let image = try await task.value
 
-            let imageToCache: UIImage
+            let imageToCache: PlatformImage
             if let resized = await image.resize(width: maxImageWidth) {
                 imageToCache = resized
             } else {
@@ -108,7 +114,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
 
     // MARK: - Private Functions
 
-    private func downloadImage(url: URL) async throws -> UIImage {
+    private func downloadImage(url: URL) async throws -> PlatformImage {
         let (data, response) = try await URLSession.shared.data(from: url)
 
         guard let httpResponse = response as? HTTPURLResponse,
@@ -116,37 +122,49 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
             throw URLError(.badServerResponse)
         }
 
-        guard let image = UIImage(data: data) else {
+        guard let image = PlatformImage(data: data) else {
             throw URLError(.cannotDecodeContentData)
         }
 
         return image
     }
 
-    private func saveImageToDisk(url: URL, image: UIImage) async throws {
+    private func saveImageToDisk(url: URL, image: PlatformImage) async throws {
         guard image.size.width > 0, image.size.height > 0 else {
             return
         }
 
+        #if canImport(UIKit)
         guard let data = image.pngData() else {
             return
         }
+        #elseif canImport(AppKit)
+        guard let tiffData = image.tiffRepresentation,
+              let bitmapImage = AppKit.NSBitmapImageRep(data: tiffData),
+              let data = bitmapImage.representation(using: .png, properties: [:]) else {
+            return
+        }
+        #endif
 
         let fileURL = getFileURL(for: url)
+        #if canImport(UIKit)
         try data.write(to: fileURL, options: .atomic)
+        #elseif canImport(AppKit)
+        try data.write(to: fileURL, options: [.atomic])
+        #endif
 
         cache.removeValue(forKey: url)
     }
 }
 
-// MARK: - UIImage Extension
+// MARK: - Platform Image Extension
 
-extension UIImage {
+extension PlatformImage {
 
     /// Resizes the image to the specified width while maintaining aspect ratio
     /// - Parameter width: The target width
     /// - Returns: The resized image, or nil if resizing fails
-    func resize(width: CGFloat) async -> UIImage? {
+    func resize(width: CGFloat) async -> PlatformImage? {
         guard size.width > 0, size.height > 0, width > 0 else {
             return nil
         }
@@ -161,6 +179,19 @@ extension UIImage {
             return nil
         }
 
+        #if canImport(UIKit)
         return await byPreparingThumbnail(ofSize: targetSize)
+        #elseif canImport(AppKit)
+        let newImage = NSImage(size: targetSize)
+        newImage.lockFocus()
+        draw(
+            in: NSRect(origin: .zero, size: targetSize),
+            from: NSRect(origin: .zero, size: size),
+            operation: .sourceOver,
+            fraction: 1.0
+        )
+        newImage.unlockFocus()
+        return newImage
+        #endif
     }
 }
