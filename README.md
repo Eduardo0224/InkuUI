@@ -13,7 +13,7 @@ A comprehensive SwiftUI design system for building beautiful manga/comic reader 
 
 ## Requirements
 
-- iOS 18.0+
+- iOS 18.0+ / macOS 15.0+ / tvOS 18.0+
 - Swift 6.2+
 - Xcode 16.0+
 
