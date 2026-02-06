@@ -6,6 +6,12 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public extension Color {
 
@@ -95,10 +101,15 @@ public extension Color {
 private extension Color {
 
     init(light: Color, dark: Color) {
+        #if canImport(UIKit)
         self.init(uiColor: UIColor(light: UIColor(light), dark: UIColor(dark)))
+        #elseif canImport(AppKit)
+        self.init(nsColor: NSColor(light: NSColor(light), dark: NSColor(dark)))
+        #endif
     }
 }
 
+#if canImport(UIKit)
 private extension UIColor {
 
     convenience init(light: UIColor, dark: UIColor) {
@@ -112,3 +123,18 @@ private extension UIColor {
         }
     }
 }
+#elseif canImport(AppKit)
+private extension NSColor {
+
+    convenience init(light: NSColor, dark: NSColor) {
+        self.init(name: nil) { appearance in
+            switch appearance.name {
+            case .darkAqua, .vibrantDark, .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark:
+                return dark
+            default:
+                return light
+            }
+        }
+    }
+}
+#endif

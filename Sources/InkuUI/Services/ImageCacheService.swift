@@ -6,6 +6,12 @@
 //
 
 import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Actor-based image caching service with memory and disk persistence
 public actor ImageCacheService: ImageCacheServiceProtocol {
@@ -134,14 +140,18 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         }
         #elseif canImport(AppKit)
         guard let tiffData = image.tiffRepresentation,
-              let bitmapImage = NSBitmapImageRep(data: tiffData),
+              let bitmapImage = AppKit.NSBitmapImageRep(data: tiffData),
               let data = bitmapImage.representation(using: .png, properties: [:]) else {
             return
         }
         #endif
 
         let fileURL = getFileURL(for: url)
+        #if canImport(UIKit)
         try data.write(to: fileURL, options: .atomic)
+        #elseif canImport(AppKit)
+        try data.write(to: fileURL, options: [.atomic])
+        #endif
 
         cache.removeValue(forKey: url)
     }

@@ -110,7 +110,9 @@ public extension View {
                 .navigationTitle("Library")
             }
         }
+        #if !os(tvOS)
         .badge(3)
+        #endif
     }
     .inkuTabStyle()
 }

@@ -29,7 +29,7 @@ public struct InkuCoverImage: View {
 
     // MARK: - States
 
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     @State private var loadError: Error?
 
     // MARK: - Initializers
@@ -49,9 +49,15 @@ public struct InkuCoverImage: View {
     public var body: some View {
         Group {
             if let image {
+                #if canImport(UIKit)
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                #elseif canImport(AppKit)
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                #endif
             } else if loadError != nil {
                 placeholder
                     .overlay {
@@ -100,7 +106,7 @@ public struct InkuCoverImage: View {
             let fileURL = ImageCacheService.shared.getFileURL(for: url)
             if FileManager.default.fileExists(atPath: fileURL.path()) {
                 let data = try Data(contentsOf: fileURL)
-                if let cachedImage = UIImage(data: data) {
+                if let cachedImage = PlatformImage(data: data) {
                     guard cachedImage.size.width > 0, cachedImage.size.height > 0 else {
                         try? FileManager.default.removeItem(at: fileURL)
                         let downloadedImage = try await ImageCacheService.shared.image(for: url)
