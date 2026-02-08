@@ -70,7 +70,7 @@ public struct InkuButton: View {
             .clipShape(RoundedRectangle(cornerRadius: InkuRadius.radius8))
         }
         #if !os(iOS)
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
         #endif
     }
 
