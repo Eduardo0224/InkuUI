@@ -24,6 +24,12 @@ public struct InkuGlassModifier: ViewModifier {
     // MARK: - Body
 
     public func body(content: Content) -> some View {
+        #if os(visionOS)
+        // visionOS: glassEffect not available, use ultraThinMaterial
+        content
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        #else
         if #available(iOS 26, macOS 16, tvOS 26, *), isEnabled {
             content
                 .background(.ultraThinMaterial)
@@ -34,6 +40,7 @@ public struct InkuGlassModifier: ViewModifier {
                 .background(Color.inkuSurfaceElevated.opacity(0.95))
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }
+        #endif
     }
 }
 
@@ -44,7 +51,7 @@ public extension View {
     ///   - isEnabled: Only enable when over dynamic content
     ///   - cornerRadius: Corner radius for the glass container
     /// - Note: Use sparingly - only for floating buttons, overlays, toolbars
-    /// - Note: Falls back to ultraThinMaterial on older OS versions
+    /// - Note: Falls back to ultraThinMaterial on older OS versions and visionOS
     func inkuGlass(isEnabled: Bool = true, cornerRadius: CGFloat = InkuRadius.radius16) -> some View {
         modifier(InkuGlassModifier(isEnabled: isEnabled, cornerRadius: cornerRadius))
     }
