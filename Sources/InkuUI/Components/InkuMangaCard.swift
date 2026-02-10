@@ -110,6 +110,9 @@ public struct InkuMangaCard: View {
         .background(Color.inkuSurfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: InkuRadius.radius12))
         .shadow(color: .black.opacity(0.08), radius: InkuRadius.radius4, y: 2)
+        #if os(visionOS)
+        .scaleHoverEffect()
+        #endif
     }
 
     // MARK: - Private Views
@@ -239,7 +242,7 @@ public struct InkuMangaCard: View {
     }
     #if os(macOS)
     .frame(width: 560)
-    #elseif os(tvOS)
+    #elseif os(visionOS)
     .frame(width: 800)
     #endif
 }

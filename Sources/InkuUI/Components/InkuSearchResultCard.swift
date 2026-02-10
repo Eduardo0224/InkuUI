@@ -81,6 +81,9 @@ public struct InkuSearchResultCard: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: InkuRadius.radius12))
             .shadow(color: .black.opacity(0.1), radius: InkuRadius.radius8, y: 2)
+            #if os(visionOS)
+            .scaleHoverEffect()
+            #endif
     }
 
     // MARK: - Private Views
@@ -160,7 +163,7 @@ public struct InkuSearchResultCard: View {
     .background(Color.inkuSurface)
     #if os(macOS)
     .frame(width: 320, height: 580)
-    #elseif os(tvOS)
-    .frame(width: 1_000)
+    #elseif os(visionOS)
+    .frame(width: 500)
     #endif
 }

@@ -124,6 +124,10 @@ public struct InkuButton: View {
         #if !os(iOS)
         .buttonStyle(.borderless)
         #endif
+        #if os(visionOS)
+        .hoverEffectDisabled()
+        .scaleHoverEffect(value: 1.04)
+        #endif
     }
 
     // MARK: - Private Properties

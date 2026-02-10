@@ -122,7 +122,7 @@ public struct InkuMangaRow: View {
             }
         }
         .padding(InkuSpacing.spacing16)
-        .inkuCard()
+        .inkuHoverCard()
     }
 
     // MARK: - Private Views
