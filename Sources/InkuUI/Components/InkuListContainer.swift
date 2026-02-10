@@ -36,7 +36,6 @@ public struct InkuListContainer<Content: View>: View {
     let showsDivider: Bool
     let contentPadding: CGFloat
     let scrollDisabled: Bool
-    let scrollDismissesKeyboard: ScrollDismissesKeyboardMode
     let content: Content
 
     // MARK: - Initializers
@@ -47,7 +46,24 @@ public struct InkuListContainer<Content: View>: View {
         showsDivider: Bool = true,
         contentPadding: CGFloat = InkuSpacing.spacing16,
         scrollDisabled: Bool = false,
-        scrollDismissesKeyboard: ScrollDismissesKeyboardMode = .automatic,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.showsDivider = showsDivider
+        self.contentPadding = contentPadding
+        self.scrollDisabled = scrollDisabled
+        self.content = content()
+    }
+
+    #if !os(visionOS)
+    public init(
+        title: String? = nil,
+        subtitle: String? = nil,
+        showsDivider: Bool = true,
+        contentPadding: CGFloat = InkuSpacing.spacing16,
+        scrollDisabled: Bool = false,
+        scrollDismissesKeyboard: ScrollDismissesKeyboardMode,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
@@ -58,6 +74,7 @@ public struct InkuListContainer<Content: View>: View {
         self.scrollDismissesKeyboard = scrollDismissesKeyboard
         self.content = content()
     }
+    #endif
 
     // MARK: - Body
 
@@ -85,9 +102,17 @@ public struct InkuListContainer<Content: View>: View {
             }
         }
         .scrollDisabled(scrollDisabled)
+        #if !os(visionOS)
         .scrollDismissesKeyboard(scrollDismissesKeyboard)
+        #endif
         .background(Color.inkuSurface)
     }
+
+    // MARK: - Private Properties
+
+    #if !os(visionOS)
+    private var scrollDismissesKeyboard: ScrollDismissesKeyboardMode = .automatic
+    #endif
 
     // MARK: - Private Views
 
