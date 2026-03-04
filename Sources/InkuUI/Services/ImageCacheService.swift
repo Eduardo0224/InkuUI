@@ -145,7 +145,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     /// Screen scale factor from the device's main screen
     @MainActor
     private static var screenScale: CGFloat {
-        #if canImport(UIKit) && !os(watchOS)
+        #if canImport(UIKit) && !os(watchOS) && !os(visionOS)
         UIScreen.main.scale
         #elseif canImport(AppKit)
         NSScreen.main?.backingScaleFactor ?? 2.0
