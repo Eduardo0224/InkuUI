@@ -13,10 +13,12 @@ public protocol ImageCacheServiceProtocol: Sendable {
     // MARK: - Functions
 
     /// Fetches an image from cache or downloads it if not cached
-    /// - Parameter url: The URL of the image to fetch
+    /// - Parameters:
+    ///   - url: The URL of the image to fetch
+    ///   - maxWidth: Optional maximum width in logical points for resizing. Uses default if nil
     /// - Returns: The cached or downloaded image
     /// - Throws: Error if download fails or image data is invalid
-    func image(for url: URL) async throws -> PlatformImage
+    func image(for url: URL, maxWidth: CGFloat?) async throws -> PlatformImage
 
     /// Gets the file URL for a cached image
     /// - Parameter url: The source URL of the image

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CryptoKit
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -28,7 +29,15 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
 
     private var cache: [URL: ImageStatus] = [:]
     private var failedURLs: Set<URL> = []
-    private let maxImageWidth: CGFloat = 150
+
+    /// Default maximum image width for resizing (150pt)
+    private let defaultMaxImageWidth: CGFloat = 150
+
+    /// Maximum number of images kept in memory cache
+    private let memoryCacheLimit = 100
+
+    /// Subdirectory inside Caches for organized storage
+    private static let cacheDirectoryName = "InkuImageCache"
 
     // MARK: - Initializers
 
@@ -37,10 +46,13 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
     // MARK: - Public Functions
 
     /// Fetches an image from cache or downloads it if not cached
-    /// - Parameter url: The URL of the image to fetch
+    /// - Parameters:
+    ///   - url: The URL of the image to fetch
+    ///   - maxWidth: Maximum width in logical points. Automatically multiplied by screen scale
+    ///     for sharp rendering on Retina displays. Uses default (150pt) if nil
     /// - Returns: The cached or downloaded image
     /// - Throws: Error if download fails or image data is invalid
-    public func image(for url: URL) async throws -> PlatformImage {
+    public func image(for url: URL, maxWidth: CGFloat? = nil) async throws -> PlatformImage {
         if failedURLs.contains(url) {
             throw URLError(.badServerResponse)
         }
@@ -63,13 +75,17 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         do {
             let image = try await task.value
 
+            let baseWidth = maxWidth ?? defaultMaxImageWidth
+            let scale = await Self.screenScale
+            let targetWidth = baseWidth * scale
             let imageToCache: PlatformImage
-            if let resized = await image.resize(width: maxImageWidth) {
+            if let resized = await image.resize(width: targetWidth) {
                 imageToCache = resized
             } else {
                 imageToCache = image
             }
 
+            evictMemoryCacheIfNeeded()
             cache[url] = .downloaded(image: imageToCache)
 
             try await saveImageToDisk(url: url, image: imageToCache)
@@ -82,25 +98,28 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         }
     }
 
-    /// Gets the file URL for a cached image in the caches directory
+    /// Gets the file URL for a cached image using SHA-256 hash of the URL
     /// - Parameter url: The source URL of the image
     /// - Returns: The local file URL where the image is cached
     nonisolated public func getFileURL(for url: URL) -> URL {
-        URL.cachesDirectory.appending(path: url.lastPathComponent)
+        let hash = SHA256.hash(data: Data(url.absoluteString.utf8))
+        let filename = hash.compactMap { String(format: "%02x", $0) }.joined()
+        return cacheDirectoryURL.appending(path: "\(filename).png")
     }
 
     /// Clears all cached images from memory and disk
     public func clearCache() async {
         cache.removeAll()
+        failedURLs.removeAll()
 
         let fileManager = FileManager.default
-        guard let cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
-            return
-        }
+        let directory = cacheDirectoryURL
+
+        guard fileManager.fileExists(atPath: directory.path()) else { return }
 
         do {
             let fileURLs = try fileManager.contentsOfDirectory(
-                at: cacheDirectory,
+                at: directory,
                 includingPropertiesForKeys: nil
             )
 
@@ -112,7 +131,49 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         }
     }
 
+    // MARK: - Private Properties
+
+    /// Dedicated cache subdirectory URL
+    nonisolated private var cacheDirectoryURL: URL {
+        let directory = URL.cachesDirectory.appending(path: Self.cacheDirectoryName)
+        if !FileManager.default.fileExists(atPath: directory.path()) {
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        return directory
+    }
+
+    /// Screen scale factor from the device's main screen
+    @MainActor
+    private static var screenScale: CGFloat {
+        #if canImport(UIKit) && !os(watchOS)
+        UIScreen.main.scale
+        #elseif canImport(AppKit)
+        NSScreen.main?.backingScaleFactor ?? 2.0
+        #else
+        2.0
+        #endif
+    }
+
     // MARK: - Private Functions
+
+    /// Evicts oldest downloaded images from memory when limit is exceeded
+    private func evictMemoryCacheIfNeeded() {
+        let downloadedCount = cache.values.filter {
+            if case .downloaded = $0 { return true }
+            return false
+        }.count
+
+        guard downloadedCount >= memoryCacheLimit else { return }
+
+        let keysToRemove = cache.compactMap { key, value -> URL? in
+            if case .downloaded = value { return key }
+            return nil
+        }.prefix(memoryCacheLimit / 4)
+
+        for key in keysToRemove {
+            cache.removeValue(forKey: key)
+        }
+    }
 
     private func downloadImage(url: URL) async throws -> PlatformImage {
         let (data, response) = try await URLSession.shared.data(from: url)
@@ -162,7 +223,7 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
 extension PlatformImage {
 
     /// Resizes the image to the specified width while maintaining aspect ratio
-    /// - Parameter width: The target width
+    /// - Parameter width: The target width in pixels
     /// - Returns: The resized image, or nil if resizing fails
     func resize(width: CGFloat) async -> PlatformImage? {
         guard size.width > 0, size.height > 0, width > 0 else {

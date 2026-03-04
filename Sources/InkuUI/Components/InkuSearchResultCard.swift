@@ -53,7 +53,7 @@ public struct InkuSearchResultCard: View {
     // MARK: - Body
 
     public var body: some View {
-        InkuCoverImage(url: imageURL, isLoading: isLoading)
+        InkuCoverImage(url: imageURL, maxWidth: 180, isLoading: isLoading)
             .aspectRatio(4/5, contentMode: .fit)
             .overlay(alignment: .topTrailing) {
                 if let badge {

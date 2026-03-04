@@ -94,7 +94,7 @@ public struct InkuMangaRow: View {
     public var body: some View {
         HStack(alignment: .top, spacing: InkuSpacing.spacing12) {
             // Cover thumbnail
-            InkuCoverImage(url: imageURL, cornerRadius: InkuRadius.radius8, isLoading: isLoading)
+            InkuCoverImage(url: imageURL, cornerRadius: InkuRadius.radius8, maxWidth: InkuDimensions.coverThumbnailWidth, isLoading: isLoading)
                 .frame(width: InkuDimensions.coverThumbnailWidth, height: InkuDimensions.coverThumbnailHeight)
 
             // Content
