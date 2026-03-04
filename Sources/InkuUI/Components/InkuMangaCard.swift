@@ -118,7 +118,7 @@ public struct InkuMangaCard: View {
     // MARK: - Private Views
 
     private var coverView: some View {
-        InkuCoverImage(url: imageURL, isLoading: isLoading)
+        InkuCoverImage(url: imageURL, maxWidth: 160, isLoading: isLoading)
             .aspectRatio(2/3, contentMode: .fit)
             .overlay(alignment: .topTrailing) {
                 if let genre {

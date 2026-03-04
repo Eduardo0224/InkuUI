@@ -25,6 +25,7 @@ public struct InkuCoverImage: View {
 
     let url: URL?
     var cornerRadius: CGFloat
+    let maxWidth: CGFloat?
     let isLoading: Bool
 
     // MARK: - States
@@ -37,10 +38,12 @@ public struct InkuCoverImage: View {
     public init(
         url: URL?,
         cornerRadius: CGFloat = InkuRadius.radius12,
+        maxWidth: CGFloat? = nil,
         isLoading: Bool = false
     ) {
         self.url = url
         self.cornerRadius = cornerRadius
+        self.maxWidth = maxWidth
         self.isLoading = isLoading
     }
 
@@ -109,7 +112,7 @@ public struct InkuCoverImage: View {
                 if let cachedImage = PlatformImage(data: data) {
                     guard cachedImage.size.width > 0, cachedImage.size.height > 0 else {
                         try? FileManager.default.removeItem(at: fileURL)
-                        let downloadedImage = try await ImageCacheService.shared.image(for: url)
+                        let downloadedImage = try await ImageCacheService.shared.image(for: url, maxWidth: maxWidth)
                         image = downloadedImage
                         return
                     }
@@ -118,7 +121,7 @@ public struct InkuCoverImage: View {
                 }
             }
 
-            let downloadedImage = try await ImageCacheService.shared.image(for: url)
+            let downloadedImage = try await ImageCacheService.shared.image(for: url, maxWidth: maxWidth)
             image = downloadedImage
         } catch {
             loadError = error
