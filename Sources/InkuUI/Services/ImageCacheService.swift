@@ -107,6 +107,23 @@ public actor ImageCacheService: ImageCacheServiceProtocol {
         return cacheDirectoryURL.appending(path: "\(filename).png")
     }
 
+    /// Returns the cached image from disk if it exists and is valid
+    /// - Parameter url: The source URL of the image
+    /// - Returns: The cached PlatformImage, or nil if not cached or invalid
+    nonisolated public func cachedImage(for url: URL) -> PlatformImage? {
+        let fileURL = getFileURL(for: url)
+        guard FileManager.default.fileExists(atPath: fileURL.path()),
+              let data = try? Data(contentsOf: fileURL),
+              let image = PlatformImage(data: data) else {
+            return nil
+        }
+        guard image.size.width > 0, image.size.height > 0 else {
+            try? FileManager.default.removeItem(at: fileURL)
+            return nil
+        }
+        return image
+    }
+
     /// Clears all cached images from memory and disk
     public func clearCache() async {
         cache.removeAll()

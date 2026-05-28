@@ -25,6 +25,11 @@ public protocol ImageCacheServiceProtocol: Sendable {
     /// - Returns: The local file URL where the image is cached
     func getFileURL(for url: URL) -> URL
 
+    /// Returns the cached image from disk if it exists and is valid
+    /// - Parameter url: The source URL of the image
+    /// - Returns: The cached PlatformImage, or nil if not cached or invalid
+    func cachedImage(for url: URL) -> PlatformImage?
+
     /// Clears all cached images from memory and disk
     func clearCache() async
 }
