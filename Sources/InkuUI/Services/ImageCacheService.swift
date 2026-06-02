@@ -257,8 +257,14 @@ extension PlatformImage {
             return nil
         }
 
-        #if canImport(UIKit)
+        #if canImport(UIKit) && !os(watchOS)
         return await byPreparingThumbnail(ofSize: targetSize)
+        #elseif os(watchOS)
+        UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+        draw(in: CGRect(origin: .zero, size: targetSize))
+        let resized = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resized
         #elseif canImport(AppKit)
         let newImage = NSImage(size: targetSize)
         newImage.lockFocus()
