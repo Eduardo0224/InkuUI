@@ -30,7 +30,7 @@ public struct InkuGlassModifier: ViewModifier {
             .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         #else
-        if #available(iOS 26, macOS 16, tvOS 26, *), isEnabled {
+        if #available(iOS 26, macOS 16, tvOS 26, watchOS 26, *), isEnabled {
             content
                 .background(.ultraThinMaterial)
                 .glassEffect(.regular)
