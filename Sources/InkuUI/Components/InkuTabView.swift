@@ -110,7 +110,7 @@ public extension View {
                 .navigationTitle("Library")
             }
         }
-        #if !os(tvOS)
+        #if !os(tvOS) && !os(watchOS)
         .badge(3)
         #endif
     }
