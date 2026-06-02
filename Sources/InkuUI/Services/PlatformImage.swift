@@ -46,11 +46,20 @@ extension PlatformImage {
         guard let croppedCG = cgImage.cropping(to: pixelRect) else { return nil }
         let cropped = UIImage(cgImage: croppedCG, scale: scale, orientation: self.imageOrientation)
 
+        #if os(watchOS)
+        UIGraphicsBeginImageContextWithOptions(
+            CGSize(width: size, height: size), false, 1.0)
+        cropped.draw(in: CGRect(x: 0, y: 0, width: size, height: size))
+        let resized = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resized
+        #else
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
         let resized = renderer.image { _ in
             cropped.draw(in: CGRect(x: 0, y: 0, width: size, height: size))
         }
         return resized
+        #endif
         #elseif canImport(AppKit)
         let targetSize = NSSize(width: size, height: size)
         let newImage = NSImage(size: targetSize)

@@ -101,15 +101,21 @@ public extension Color {
 private extension Color {
 
     init(light: Color, dark: Color) {
-        #if canImport(UIKit)
+        #if canImport(UIKit) && !os(watchOS)
         self.init(uiColor: UIColor(light: UIColor(light), dark: UIColor(dark)))
+        #elseif os(watchOS)
+        // UIColor(dynamicProvider:) is unavailable on watchOS.
+        // SwiftUI Color automatically adapts to the color scheme
+        // when rendered in a View hierarchy, so using `light` here
+        // is safe — the system applies dark-mode adjustments.
+        self = light
         #elseif canImport(AppKit)
         self.init(nsColor: NSColor(light: NSColor(light), dark: NSColor(dark)))
         #endif
     }
 }
 
-#if canImport(UIKit)
+#if canImport(UIKit) && !os(watchOS)
 private extension UIColor {
 
     convenience init(light: UIColor, dark: UIColor) {
